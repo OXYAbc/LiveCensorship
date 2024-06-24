@@ -1,0 +1,28 @@
+<div class="d-flex flex-column h-100">
+  <div class="d-flex flex-column justify-content-center align-content-between flex-grow-1 gap-5">
+    <div class="text-center header">
+      <img class="mb-5" src="https://wsiz.edu.pl/wp-content/uploads/2020/10/logo_wsiiz-2.svg"
+           alt="Wyższa Szkoła Informatyki i Zarządzania">
+    </div>
+    <div class="w-100 container">
+      <div class="row">
+        <div class="col-7">
+          <app-camera></app-camera>
+        </div>
+        <div class="col-4">
+          <div>
+            <textarea
+              class="form-control mb-2"
+              [formControl]="promotField"
+              rows="3"
+              appAutoComplete
+              required
+            ></textarea>
+            <button class="btn btn-outline-primary" (click)="addKeyword()">Add promot</button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
