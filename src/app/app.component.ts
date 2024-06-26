@@ -12,14 +12,23 @@ import {FormControl, ReactiveFormsModule} from "@angular/forms";
   styleUrl: './app.component.scss'
 })
 export class AppComponent {
+  // icons = {xmark: 'fa-solid fa-xmark'}
   title = 'liveCensorship';
   promotField = new FormControl<string>('');
-  keywords: string[] = [];
+  keywords: string[] = ['person'];
 
   addKeyword() {
-    if (this.promotField.value && !this.promotField.value.includes(this.promotField.value)) {
+    if (this.promotField.value && !this.keywords.includes(this.promotField.value)) {
       this.keywords.push(this.promotField.value);
     }
     this.promotField.setValue('');
+  }
+
+  removeKeyword(index: number) {
+    if (index >= 0 && index < this.keywords.length) {
+      this.keywords.splice(index, 1);
+    } else {
+      console.error("Index out of range");
+    }
   }
 }
