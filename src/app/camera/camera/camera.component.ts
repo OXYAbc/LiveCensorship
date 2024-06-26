@@ -1,6 +1,7 @@
-import {Component, ElementRef, ViewChild} from '@angular/core';
+import {Component, ElementRef, Input, ViewChild} from '@angular/core';
 import * as cocoSSD from '@tensorflow-models/coco-ssd';
 import '@tensorflow/tfjs';
+import {WebcamImage} from "ngx-webcam";
 
 @Component({
   selector: 'app-camera',
@@ -9,31 +10,24 @@ import '@tensorflow/tfjs';
 })
 export class CameraComponent {
   @ViewChild('videoElement', {static: false}) videoElement: ElementRef;
-  video: any;
-  modelCOCOSSD: any
-  constraints = {
-    video: {
-      facingMode: 'user'
-    },
-    audio: false
-  };
+  @ViewChild('canvas', {static: true}) canvas: ElementRef<HTMLCanvasElement>;
 
-  constructor(private elem: ElementRef) {
-    navigator.mediaDevices.getUserMedia(this.constraints).then((stream) => {
-      this.video = this.videoElement.nativeElement;
-      this.video.srcObject = stream;
+  @Input() keywords: string[];
+  modelCOCOSSD: cocoSSD.ObjectDetection;
+
+  constructor() {
+    navigator.mediaDevices.getUserMedia({video: true}).then((stream) => {
+      this.videoElement.nativeElement.srcObject = stream;
 
       (async () => {
         this.modelCOCOSSD = await cocoSSD.load();
-        this.detectFrame(this.video, this.modelCOCOSSD)
+        this.detectFrame(this.videoElement.nativeElement, this.modelCOCOSSD)
       })();
     });
   }
 
-  detectFrame = (video: any, model: any) => {
-    // console.log(video, model)
+  detectFrame = (video: WebcamImage, model: any) => {
     model.detect(video).then((predictions: any[]) => {
-      // console.log(predictions)
       this.renderPredictions(predictions);
       requestAnimationFrame(() => {
         this.detectFrame(video, model);
@@ -41,50 +35,51 @@ export class CameraComponent {
     });
   }
 
-  waitForVideoReady(): Promise<void> {
-    return new Promise<void>((resolve) => {
-      this.video.oncanplay = () => {
-        resolve();
-      };
-    });
-  }
-
   renderPredictions = (predictions: any[]) => {
-    const canvas = <HTMLCanvasElement>document.getElementById("myCanvas");
-    const ctx = <CanvasRenderingContext2D>canvas.getContext("2d");
+    const context = <CanvasRenderingContext2D>this.canvas.nativeElement.getContext("2d");
 
-    canvas.width = 640;
-    canvas.height = 480;
+    this.canvas.nativeElement.width = 640;
+    this.canvas.nativeElement.height = 480;
 
-    ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
-    // Font options.
+    context.clearRect(0, 0, context.canvas.width, context.canvas.height);
     const font = "16px sans-serif";
-    ctx.font = font;
-    ctx.textBaseline = "top";
-    ctx.drawImage(this.video, 0, 0, 640, 480);
+    context.font = font;
+    context.textBaseline = "top";
+    context.drawImage(this.videoElement.nativeElement, 0, 0, 640, 480);
 
     predictions.forEach(prediction => {
       const x = prediction.bbox[0];
       const y = prediction.bbox[1];
       const width = prediction.bbox[2];
       const height = prediction.bbox[3];
-      // Draw the bounding box.
-      ctx.strokeStyle = "#00FFFF";
-      ctx.lineWidth = 2;
-      ctx.strokeRect(x, y, width, height);
-      // Draw the label background.
-      ctx.fillStyle = "#00FFFF";
-      const textWidth = ctx.measureText(prediction.class).width;
-      const textHeight = parseInt(font, 10); // base 10
-      ctx.fillRect(x, y, textWidth + 4, textHeight + 4);
+
+      context.strokeStyle = "#bb171e";
+      context.lineWidth = 2;
+      context.strokeRect(x, y, width, height);
+
+      context.fillStyle = "#bb171e";
+      const textWidth = context.measureText(prediction.class).width;
+      const textHeight = parseInt(font, 10);
+      context.fillRect(x, y, textWidth + 4, textHeight + 4);
     });
 
     predictions.forEach(prediction => {
       const x = prediction.bbox[0];
       const y = prediction.bbox[1];
-      // Draw the text last to ensure it's on top.
-      ctx.fillStyle = "#000000";
-      ctx.fillText(prediction.class, x, y);
+
+      context.fillStyle = "#000000";
+      context.fillText(prediction.class, x, y);
+
+      if (this.keywords.includes(prediction.class) && prediction.score > 0.5) {
+        this.blurArea(context, prediction.bbox);
+      }
     });
   };
+
+  blurArea(context: CanvasRenderingContext2D, bbox: number[]) {
+    const [x, y, width, height] = bbox;
+    context.filter = 'blur(10px)';
+    context.fillRect(x, y, width, height);
+    context.filter = 'none';
+  }
 }

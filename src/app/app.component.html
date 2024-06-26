@@ -7,7 +7,7 @@
     <div class="w-100 container">
       <div class="row">
         <div class="col-7">
-          <app-camera></app-camera>
+          <app-camera [keywords]="keywords"></app-camera>
         </div>
         <div class="col-4">
           <div>
@@ -19,6 +19,16 @@
               required
             ></textarea>
             <button class="btn btn-outline-primary" (click)="addKeyword()">Add promot</button>
+          </div>
+          <div class="mt-2">
+            @if (keywords.length) {
+            Selected words:
+              <div class="row ms-0">
+                @for (keyword of keywords; track keyword; let index = $index) {
+              <button class="btn btn-outline-secondary w-auto" (click)="removeKeyword(index)">{{keyword}} X</button>
+              }
+              </div>
+            }
           </div>
         </div>
       </div>
